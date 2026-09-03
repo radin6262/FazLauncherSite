@@ -247,10 +247,12 @@
         .modal-box {
             background: #050505;
             border: 3px solid #ff0000;
-            max-width: 600px;
+            max-width: 650px;
             width: 100%;
             padding: 20px;
             box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+            max-height: 85vh;
+            overflow-y: auto;
         }
 
         .modal-header {
@@ -322,8 +324,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            max-height: 300px;
-            overflow-y: auto;
+            margin-bottom: 15px;
         }
 
         .file-item {
@@ -374,6 +375,62 @@
             background: #ff0000;
             color: #000;
             font-weight: bold;
+        }
+
+        /* Dropdown Styles for Older Versions */
+        details {
+            border: 1px solid #333;
+            background: #000;
+            margin-top: 15px;
+        }
+
+        summary {
+            padding: 12px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: #ff0000;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            user-select: none;
+            background: #080808;
+            outline: none;
+        }
+
+        summary:hover {
+            background: #111;
+            color: #fff;
+        }
+
+        .older-versions-content {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .version-dropdown {
+            border: 1px solid #222;
+        }
+
+        .version-dropdown summary {
+            color: #aaa;
+            font-size: 0.8rem;
+            background: #050505;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .version-dropdown summary:hover {
+            color: #fff;
+            border-color: #444;
+        }
+
+        .version-dropdown .file-list {
+            padding: 10px;
+            margin-bottom: 0;
+            background: #030303;
         }
 
         .loading-state, .error-state {
@@ -446,7 +503,7 @@
 </div>
 
 <script>
-    const REMOTE_JSON_URL = "https://api.github.com/repos/radin6262/FazLauncherGit/releases/latest";
+    const REMOTE_RELEASES_URL = "https://api.github.com/repos/radin6262/FazLauncherGit/releases";
 
     const dlBtn = document.getElementById('dlBtn');
     const modal = document.getElementById('downloadModal');
@@ -467,39 +524,48 @@
         fileListContainer.innerHTML = '<div class="loading-state">> QUERYING REMOTE DATABASE...</div>';
 
         try {
-            const response = await fetch(REMOTE_JSON_URL);
+            const response = await fetch(REMOTE_RELEASES_URL);
             if (!response.ok) throw new Error('NETWORK_ERROR');
 
-            const data = await response.json();
-            renderReleaseView(data);
+            const releases = await response.json();
+            renderReleaseView(releases);
         } catch (err) {
-            // Fallback object matching GitHub release schema
-            renderReleaseView({
-                tag_name: "win-v1.0",
-                name: "FNAF Launcher - 1.0 Stable",
-                assets: [
-                    {
-                        name: "fnaf-launcher-windows.zip",
-                        size: 55616743,
-                        download_count: 14,
-                        browser_download_url: "https://github.com/radin6262/FazLauncherGit/releases/download/win-v1.0/fnaf-launcher-windows.zip"
-                    }
-                ]
-            });
+            // Fallback list of releases matching GitHub API schema
+            renderReleaseView([
+                {
+                    tag_name: "win-v1.0",
+                    name: "FNAF Launcher - 1.0 Stable",
+                    assets: [
+                        {
+                            name: "fnaf-launcher-windows.zip",
+                            size: 55616743,
+                            download_count: 14,
+                            browser_download_url: "https://github.com/radin6262/FazLauncherGit/releases/download/win-v1.0/fnaf-launcher-windows.zip"
+                        }
+                    ]
+                },
+                {
+                    tag_name: "win-v0.9-beta",
+                    name: "FNAF Launcher - 0.9 Beta",
+                    assets: [
+                        {
+                            name: "fnaf-launcher-beta.zip",
+                            size: 48200000,
+                            download_count: 5,
+                            browser_download_url: "https://github.com/radin6262/FazLauncherGit/releases/download/win-v0.9-beta/fnaf-launcher-beta.zip"
+                        }
+                    ]
+                }
+            ]);
         }
     }
 
-    function renderReleaseView(release) {
-        const tag = release.tag_name || "v1.0";
-        const title = release.name || "Release Package";
-        const assets = release.assets || [];
-
-        if (assets.length === 0) {
-            fileListContainer.innerHTML = '<div class="error-state">> NO RELEASE FILES FOUND</div>';
-            return;
+    function renderFileList(assets) {
+        if (!assets || assets.length === 0) {
+            return '<div class="error-state">> NO FILES ATTACHED</div>';
         }
 
-        const filesHTML = assets.map(file => {
+        return assets.map(file => {
             const sizeMB = file.size ? (file.size / (1024 * 1024)).toFixed(2) : "0.00";
             const downloads = file.download_count !== undefined ? file.download_count : 0;
 
@@ -513,17 +579,60 @@
               </div>
             `;
         }).join('');
+    }
 
-        fileListContainer.innerHTML = `
+    function renderReleaseView(releases) {
+        if (!releases || releases.length === 0) {
+            fileListContainer.innerHTML = '<div class="error-state">> NO RELEASES FOUND</div>';
+            return;
+        }
+
+        const latestRelease = releases[0];
+        const olderReleases = releases.slice(1);
+
+        const latestTag = latestRelease.tag_name || "v1.0";
+        const latestTitle = latestRelease.name || "Release Package";
+
+        let html = `
             <div class="release-info">
-                <span class="release-name">${title}</span>
-                <span class="tag-badge">${tag}</span>
+                <span class="release-name">${latestTitle}</span>
+                <span class="tag-badge">${latestTag}</span>
             </div>
-            <div class="section-label">> FILES</div>
+            <div class="section-label">> LATEST FILES</div>
             <div class="file-list">
-                ${filesHTML}
+                ${renderFileList(latestRelease.assets)}
             </div>
         `;
+
+        if (olderReleases.length > 0) {
+            const olderHTML = olderReleases.map(rel => {
+                const tag = rel.tag_name || "v0.0";
+                const title = rel.name || "Older Release";
+
+                return `
+                    <details class="version-dropdown">
+                        <summary>
+                            <span>${title}</span>
+                            <span class="tag-badge" style="background:#444; color:#fff;">${tag}</span>
+                        </summary>
+                        <div class="file-list">
+                            ${renderFileList(rel.assets)}
+                        </div>
+                    </details>
+                `;
+            }).join('');
+
+            html += `
+                <details>
+                    <summary>> OLDER VERSIONS (${olderReleases.length})</summary>
+                    <div class="older-versions-content">
+                        ${olderHTML}
+                    </div>
+                </details>
+            `;
+        }
+
+        fileListContainer.innerHTML = html;
     }
 </script>
 
