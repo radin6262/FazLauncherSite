@@ -29,7 +29,7 @@
             overflow-x: hidden;
         }
 
-        /* CRT Scanline & Flickering Effect */
+        /* CRT Scanline Effect */
         .crt-overlay {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -227,6 +227,161 @@
             color: #555;
             text-align: center;
         }
+
+        /* Modal Backdrop & Container */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-box {
+            background: #050505;
+            border: 3px solid #ff0000;
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.4);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .modal-title {
+            color: #ff0000;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .close-btn {
+            background: transparent;
+            border: 1px solid #555;
+            color: #fff;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-family: monospace;
+        }
+
+        .close-btn:hover {
+            background: #ff0000;
+            color: #000;
+        }
+
+        /* Download Section Styling */
+        .release-info {
+            background: #000;
+            border: 1px solid #333;
+            padding: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .tag-badge {
+            background: #ff0000;
+            color: #000;
+            font-weight: bold;
+            padding: 2px 8px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .release-name {
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: bold;
+        }
+
+        .section-label {
+            color: #888;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            border: 1px solid #333;
+            padding: 12px;
+            background: #0a0a0a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-item:hover {
+            border-color: #fff;
+        }
+
+        .file-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-name {
+            color: #fff;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .file-meta {
+            color: #666;
+            font-size: 0.75rem;
+            margin-top: 3px;
+        }
+
+        .dl-file-btn {
+            background: #000;
+            color: #fff;
+            border: 1px solid #ff0000;
+            padding: 8px 14px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            cursor: pointer;
+            text-decoration: none;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .dl-file-btn:hover {
+            background: #ff0000;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .loading-state, .error-state {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
@@ -238,10 +393,11 @@
 
     <header>
         <h1>FAZ_LAUNCHER</h1>
-        <div class="subtitle">a modern launcher for fnaf</div>
+        <div class="subtitle">FAZLAUNCHER, a modern fnaf launcher</div>
     </header>
 
     <div class="main-content">
+        <!-- Camera Monitor Section -->
         <div class="monitor-frame">
             <div class="monitor-header">
                 <span><span class="recording-dot"></span>REC</span>
@@ -249,24 +405,25 @@
             </div>
             <div class="screenshot-container">
                 <img src="Preview.png" alt="Launcher Preview">
-                <div class="camera-label">STAGE VIEW</div>
+                <div class="camera-label">PC VIEWPORT</div>
             </div>
         </div>
 
+        <!-- Control Panel Section -->
         <div class="panel">
             <div>
                 <div class="panel-title">System Features</div>
                 <ul class="info-list">
                     <li>DIRECT GAME EXECUTION</li>
-                    <li>AUTOMATIC EXTRACTION</li>
-                    <li>MODERN UI</li>
-                    <li>FAST DOWNLOADING</li>
+                    <li>FAST DOWNLOADS</li>
+                    <li>SECURE DOWNLOAD HOST</li>
+                    <li>NO SECURITY RISKS</li>
                 </ul>
             </div>
 
             <div>
-                <button class="launch-btn" id="dlBtn">Download</button>
-                <div class="system-status">WIN_X64</div>
+                <button class="launch-btn" id="dlBtn">DOWNLOAD SYSTEM</button>
+                <div class="system-status">MEMORY OK // WIN_X64</div>
             </div>
         </div>
     </div>
@@ -274,10 +431,100 @@
     <div class="checkerboard" style="margin-top: 20px;"></div>
 </div>
 
+<!-- Download Modal -->
+<div class="modal-overlay" id="downloadModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-title">> DOWNLOAD_MANAGER</div>
+            <button class="close-btn" id="closeModal">X</button>
+        </div>
+
+        <div id="fileListContainer">
+            <!-- Dynamic release and assets list -->
+        </div>
+    </div>
+</div>
+
 <script>
-    document.getElementById('dlBtn').addEventListener('click', () => {
-        window.location.href = "https://github.com/radin6262/FazLauncherGit/releases/download/win-v1.0/fnaf-launcher-windows.zip";
+    const REMOTE_JSON_URL = "https://api.github.com/repos/radin6262/FazLauncherGit/releases/latest";
+
+    const dlBtn = document.getElementById('dlBtn');
+    const modal = document.getElementById('downloadModal');
+    const closeModal = document.getElementById('closeModal');
+    const fileListContainer = document.getElementById('fileListContainer');
+
+    dlBtn.addEventListener('click', () => {
+        modal.classList.add('active');
+        fetchDownloads();
     });
+
+    closeModal.addEventListener('click', () => modal.classList.remove('active'));
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('active');
+    });
+
+    async function fetchDownloads() {
+        fileListContainer.innerHTML = '<div class="loading-state">> QUERYING REMOTE DATABASE...</div>';
+
+        try {
+            const response = await fetch(REMOTE_JSON_URL);
+            if (!response.ok) throw new Error('NETWORK_ERROR');
+
+            const data = await response.json();
+            renderReleaseView(data);
+        } catch (err) {
+            // Fallback object matching GitHub release schema
+            renderReleaseView({
+                tag_name: "win-v1.0",
+                name: "FNAF Launcher - 1.0 Stable",
+                assets: [
+                    {
+                        name: "fnaf-launcher-windows.zip",
+                        size: 55616743,
+                        download_count: 14,
+                        browser_download_url: "https://github.com/radin6262/FazLauncherGit/releases/download/win-v1.0/fnaf-launcher-windows.zip"
+                    }
+                ]
+            });
+        }
+    }
+
+    function renderReleaseView(release) {
+        const tag = release.tag_name || "v1.0";
+        const title = release.name || "Release Package";
+        const assets = release.assets || [];
+
+        if (assets.length === 0) {
+            fileListContainer.innerHTML = '<div class="error-state">> NO RELEASE FILES FOUND</div>';
+            return;
+        }
+
+        const filesHTML = assets.map(file => {
+            const sizeMB = file.size ? (file.size / (1024 * 1024)).toFixed(2) : "0.00";
+            const downloads = file.download_count !== undefined ? file.download_count : 0;
+
+            return `
+              <div class="file-item">
+                <div class="file-info">
+                  <span class="file-name">${file.name}</span>
+                  <span class="file-meta">SIZE: ${sizeMB} MB | DOWNLOADS: ${downloads}</span>
+                </div>
+                <a href="${file.browser_download_url}" class="dl-file-btn" target="_blank">DOWNLOAD</a>
+              </div>
+            `;
+        }).join('');
+
+        fileListContainer.innerHTML = `
+            <div class="release-info">
+                <span class="release-name">${title}</span>
+                <span class="tag-badge">${tag}</span>
+            </div>
+            <div class="section-label">> FILES</div>
+            <div class="file-list">
+                ${filesHTML}
+            </div>
+        `;
+    }
 </script>
 
 </body>
