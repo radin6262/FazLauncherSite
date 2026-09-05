@@ -347,7 +347,7 @@
             background: #000;
             border: 1px solid #333;
             padding: 12px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -431,6 +431,21 @@
             background: #ff0000;
             color: #000;
             font-weight: bold;
+        }
+
+        /* Inline Preview Alert Banner */
+        .preview-alert {
+            background: #1a1500;
+            border: 1px dashed #ffcc00;
+            color: #ffcc00;
+            padding: 10px;
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         /* Dropdown Styles for Older Versions */
@@ -558,7 +573,7 @@
 
             <div>
                 <button class="launch-btn" id="dlBtn">DOWNLOAD</button>
-                <div class="system-status">Windows 10/11 x64</div>
+                <div class="system-status">Windows / Android</div>
             </div>
         </div>
     </div>
@@ -600,7 +615,8 @@
 </div>
 
 <script>
-    const REMOTE_RELEASES_URL = "https://api.github.com/repos/radin6262/FazLauncherGit/releases";
+    const WINDOWS_RELEASES_URL = "https://api.github.com/repos/radin6262/FazLauncherGit/releases";
+    const ANDROID_RELEASES_URL = "https://api.github.com/repos/radin6262/FazLauncherAndroidGit/releases";
 
     const dlBtn = document.getElementById('dlBtn');
     const modal = document.getElementById('downloadModal');
@@ -630,51 +646,25 @@
         if (platform === 'windows') {
             tabWindows.classList.add('active');
             tabAndroid.classList.remove('active');
-            fetchDownloads();
+            fetchDownloads(WINDOWS_RELEASES_URL);
         } else if (platform === 'android') {
             tabAndroid.classList.add('active');
             tabWindows.classList.remove('active');
-            renderAndroidView();
+            fetchDownloads(ANDROID_RELEASES_URL);
         }
     }
 
-    async function fetchDownloads() {
+    async function fetchDownloads(url) {
         fileListContainer.innerHTML = '<div class="loading-state">> QUERYING REMOTE DATABASE...</div>';
 
         try {
-            const response = await fetch(REMOTE_RELEASES_URL);
+            const response = await fetch(url);
             if (!response.ok) throw new Error('NETWORK_ERROR');
 
             const releases = await response.json();
             renderReleaseView(releases);
         } catch (err) {
-            // Fallback list of releases matching GitHub API schema
-            renderReleaseView([
-                {
-                    tag_name: "win-v1.0",
-                    name: "FNAF Launcher - 1.0 Stable",
-                    assets: [
-                        {
-                            name: "fnaf-launcher-windows.zip",
-                            size: 55616743,
-                            download_count: 14,
-                            browser_download_url: "https://github.com/radin6262/FazLauncherGit/releases/download/win-v1.0/fnaf-launcher-windows.zip"
-                        }
-                    ]
-                },
-                {
-                    tag_name: "win-v0.9-beta",
-                    name: "FNAF Launcher - 0.9 Beta",
-                    assets: [
-                        {
-                            name: "fnaf-launcher-beta.zip",
-                            size: 48200000,
-                            download_count: 5,
-                            browser_download_url: "https://github.com/radin6262/FazLauncherGit/releases/download/win-v0.9-beta/fnaf-launcher-beta.zip"
-                        }
-                    ]
-                }
-            ]);
+            renderAndroidNotice();
         }
     }
 
@@ -701,7 +691,7 @@
 
     function renderReleaseView(releases) {
         if (!releases || releases.length === 0) {
-            fileListContainer.innerHTML = '<div class="error-state">> NO RELEASES FOUND</div>';
+            renderAndroidNotice();
             return;
         }
 
@@ -710,12 +700,26 @@
 
         const latestTag = latestRelease.tag_name || "v1.0";
         const latestTitle = latestRelease.name || "Release Package";
+        const isLatestPreview = latestTag.toLowerCase().includes('preview');
 
         let html = `
             <div class="release-info">
                 <span class="release-name">${latestTitle}</span>
-                <span class="tag-badge">${latestTag}</span>
+                <span class="tag-badge" style="${isLatestPreview ? 'background:#ffcc00; color:#000;' : ''}">
+                    ${latestTag}
+                </span>
             </div>
+        `;
+
+        if (isLatestPreview) {
+            html += `
+                <div class="preview-alert">
+                    <span>WARNING: THIS IS A PREVIEW BUILD AND MAY CONTAIN UNSTABLE FEATURES.</span>
+                </div>
+            `;
+        }
+
+        html += `
             <div class="section-label">> LATEST FILES</div>
             <div class="file-list">
                 ${renderFileList(latestRelease.assets)}
@@ -726,6 +730,28 @@
             const olderHTML = olderReleases.map(rel => {
                 const tag = rel.tag_name || "v0.0";
                 const title = rel.name || "Older Release";
+                const isPreview = tag.toLowerCase().includes('preview');
+
+                let oldReleaseHtml = `
+                    <div class="release-info" style="margin-bottom: 5px;">
+                        <span class="release-name">${title}</span>
+                        <span class="tag-badge" style="background:#444; color:#fff;">${tag}</span>
+                    </div>
+                `;
+
+                if (isPreview) {
+                    oldReleaseHtml += `
+                        <div class="preview-alert">
+                            <span>WARNING: PREVIEW BUILD. PLEASE DOWNLOAD THE STABLE VERSION</span>
+                        </div>
+                    `;
+                }
+
+                oldReleaseHtml += `
+                    <div class="file-list">
+                        ${renderFileList(rel.assets)}
+                    </div>
+                `;
 
                 return `
                     <details class="version-dropdown">
@@ -733,8 +759,8 @@
                             <span>${title}</span>
                             <span class="tag-badge" style="background:#444; color:#fff;">${tag}</span>
                         </summary>
-                        <div class="file-list">
-                            ${renderFileList(rel.assets)}
+                        <div style="padding: 10px; background: #030303;">
+                            ${oldReleaseHtml}
                         </div>
                     </details>
                 `;
@@ -753,11 +779,11 @@
         fileListContainer.innerHTML = html;
     }
 
-    function renderAndroidView() {
+    function renderAndroidNotice() {
         fileListContainer.innerHTML = `
             <div class="dev-notice">
                 <div class="dev-notice-title">> NOTICE</div>
-                <div class="dev-notice-desc">Android Port Is in Development</div>
+                <div class="dev-notice-desc">No releases uploaded yet. Android Port is currently in Development.</div>
             </div>
         `;
     }
